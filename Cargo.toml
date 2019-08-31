@@ -1,0 +1,7 @@
+[package]
+name = "coubot"
+version = "0.1.0"
+authors = ["Alex Hincu <teeseal@sorta.moe>"]
+edition = "2018"
+
+[dependencies]
