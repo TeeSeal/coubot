@@ -15,6 +15,26 @@ pub struct Coub {
 }
 
 impl Coub {
+    pub fn download(&self, path: &Path) -> BoxResult<()> {
+        let mut video = NamedTempFile::new()?;
+        self.write_video_to(video.as_file_mut())?;
+
+        Command::new("ffmpeg")
+            .arg("-i")
+            .arg(video.path())
+            .args(&[
+                "-i", &self.audio,
+                "-shortest",
+                "-c", "copy",
+                "-y"
+            ])
+            .arg(path)
+            .output()?;
+
+        video.close()?;
+        Ok(())
+    }
+
     pub fn download_loops(&self, path: &Path, loops: usize) -> BoxResult<()> {
         let mut video = NamedTempFile::new()?;
         self.write_video_to(video.as_file_mut())?;
@@ -41,7 +61,6 @@ impl Coub {
 
         video.close()?;
         concat_file.close()?;
-
         Ok(())
     }
 

@@ -33,7 +33,13 @@ impl EventHandler for Handler {
                     .unwrap()
                     .into_temp_path();
 
-                match c.download_loops(&path, loops) {
+                let result = if loops < 2 {
+                    c.download(&path)
+                } else {
+                    c.download_loops(&path, loops)
+                };
+
+                match result {
                     Ok(()) => {
                         let _ = msg.channel_id.send_message(&ctx.http, |m| {
                             m.add_file(AttachmentType::Path(&path))
