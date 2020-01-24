@@ -10,9 +10,8 @@ use serenity::{
 use tempfile::Builder;
 use std::env;
 
-// This is the amount of seconds of mp4 video I found to be under 8 MB in most cases.
-// Not super reliable but works for me.
-const MAX_SECONDS: f64 = 21_f64;
+// Leaving 300KB for the audio
+const MAX_SIZE: u64 = 7_700_000;
 lazy_static! {
     static ref COUB_REGEX: Regex = Regex::new(r"(https?://)?(www\.)?coub\.com/[\w/]+").unwrap();
 }
@@ -23,7 +22,7 @@ impl EventHandler for Handler {
     fn message(&self, ctx: Context, msg: Message) {
         if let Some(url_match) = COUB_REGEX.find(&msg.content) {
             if let Ok(c) = coub::fetch_coub(url_match.as_str()) {
-                let loops = (MAX_SECONDS / c.duration) as usize;
+                let loops = (MAX_SIZE / c.size) as usize;
 
                 let path = Builder::new()
                     .prefix(&c.id)

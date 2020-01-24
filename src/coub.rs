@@ -11,7 +11,8 @@ pub struct Coub {
     pub title: String,
     pub video: String,
     pub audio: String,
-    pub duration: f64
+    pub duration: f64,
+    pub size: u64
 }
 
 impl Coub {
@@ -82,12 +83,16 @@ pub fn fetch_coub(id: &str) -> BoxResult<Coub> {
     let json: Value = reqwest::get(&url)?.json()?;
     let urls = &json["file_versions"]["html5"];
 
+    let audio = get_highest_quality(&urls["audio"]);
+    let video = get_highest_quality(&urls["video"]);
+
     Ok(Coub {
         id: id,
         title: json["title"].as_str().unwrap().to_string(),
-        audio: get_highest_quality_url(&urls["audio"]),
-        video: get_highest_quality_url(&urls["video"]),
-        duration: json["duration"].as_f64().unwrap()
+        audio: audio["url"].as_str().unwrap().to_string(),
+        video: video["url"].as_str().unwrap().to_string(),
+        duration: json["duration"].as_f64().unwrap(),
+        size: video["size"].as_u64().unwrap()
     })
 }
 
@@ -102,9 +107,6 @@ fn get_coub_id(string: &str) -> String {
     }
 }
 
-fn get_highest_quality_url(urls: &Value) -> String {
-    urls["high"]["url"]
-        .as_str()
-        .unwrap_or(urls["med"]["url"].as_str().unwrap())
-        .to_string()
+fn get_highest_quality(urls: &Value) -> &Value {
+    urls.get("high").unwrap_or(urls.get("med").unwrap())
 }
