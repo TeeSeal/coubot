@@ -26,7 +26,7 @@ impl Coub {
             .args(&[
                 "-i", &self.audio,
                 "-shortest",
-                "-c", "copy",
+                "-c:v:0", "copy",
                 "-y"
             ])
             .arg(path)
@@ -54,7 +54,7 @@ impl Coub {
             .args(&[
                 "-i", &self.audio,
                 "-shortest",
-                "-c", "copy",
+                "-c:v:0", "copy",
                 "-y"
             ])
             .arg(path)

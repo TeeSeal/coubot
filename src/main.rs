@@ -10,8 +10,8 @@ use serenity::{
 use tempfile::Builder;
 use std::env;
 
-// File size limit by discord :(
-const MAX_SIZE: u64 = 7_000_000;
+// 8MB file size limit by discord :(
+const MAX_SIZE: u64 = 7_500_000;
 lazy_static! {
     static ref COUB_REGEX: Regex = Regex::new(r"(https?://)?(www\.)?coub\.com/[\w/]+").unwrap();
 }
@@ -42,10 +42,10 @@ impl EventHandler for Handler {
 
                 match result {
                     Ok(()) => {
-                        let _ = status_message.delete(&ctx);
                         let _ = msg.channel_id.send_message(&ctx.http, |m| {
                             m.add_file(AttachmentType::Path(&path))
                         });
+                        let _ = status_message.delete(&ctx);
                     },
                     Err(why) => {
                         println!("Error converting coub {}\n{:?}", c.id, why);
