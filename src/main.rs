@@ -10,7 +10,7 @@ use serenity::{
 use tempfile::Builder;
 use std::env;
 
-// Leaving 300KB for the audio
+// 8MB file size limit by discord :(
 const MAX_SIZE: u64 = 7_700_000;
 lazy_static! {
     static ref COUB_REGEX: Regex = Regex::new(r"(https?://)?(www\.)?coub\.com/[\w/]+").unwrap();
@@ -21,6 +21,8 @@ struct Handler;
 impl EventHandler for Handler {
     fn message(&self, ctx: Context, msg: Message) {
         if let Some(url_match) = COUB_REGEX.find(&msg.content) {
+            let mut status_message = msg.channel_id.say(&ctx.http, "Working on it...").unwrap();
+
             if let Ok(c) = coub::fetch_coub(url_match.as_str()) {
                 let loops = (MAX_SIZE / c.size) as usize;
 
@@ -40,12 +42,16 @@ impl EventHandler for Handler {
 
                 match result {
                     Ok(()) => {
+                        let _ = status_message.delete(&ctx);
                         let _ = msg.channel_id.send_message(&ctx.http, |m| {
                             m.add_file(AttachmentType::Path(&path))
                         });
                     },
                     Err(why) => {
                         println!("Error converting coub {}\n{:?}", c.id, why);
+                        let _ = status_message.edit(&ctx, |m| {
+                            m.content(format!("Error converting coub {}\n{:?}", c.id, why))
+                        });
                     }
                 }
 

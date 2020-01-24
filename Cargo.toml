@@ -5,7 +5,7 @@ authors = ["Alex Hincu <teeseal@sorta.moe>"]
 edition = "2018"
 
 [dependencies]
-serenity = "0.6"
+serenity = "0.8"
 regex = "1.2.1"
 lazy_static = "1.4.0"
 url = "2.1.0"
