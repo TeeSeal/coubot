@@ -10,8 +10,8 @@ use serenity::{
 use tempfile::Builder;
 use std::env;
 
-// 8MB file size limit by discord :(
-const MAX_SIZE: u64 = 7_700_000;
+// File size limit by discord :(
+const MAX_SIZE: u64 = 7_000_000;
 lazy_static! {
     static ref COUB_REGEX: Regex = Regex::new(r"(https?://)?(www\.)?coub\.com/[\w/]+").unwrap();
 }
