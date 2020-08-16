@@ -9,6 +9,7 @@ COPY Cargo.toml Cargo.lock ./
 RUN cargo build --release
 
 COPY src ./src
+RUN rm target/x86_64-unknown-linux-musl/release/deps/coubot*
 RUN cargo install --target x86_64-unknown-linux-musl --path .
 
 FROM alpine:latest
