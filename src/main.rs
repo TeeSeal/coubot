@@ -9,6 +9,7 @@ use serenity::{
     prelude::*,
 };
 use std::env;
+use log::{info, trace, error};
 
 // 8MB file size limit by discord :(
 const MAX_SIZE: u64 = 7_500_000;
@@ -22,6 +23,8 @@ struct Handler;
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
         if let Some(url_match) = COUB_REGEX.find(&msg.content) {
+            info!("Processing message: {}", &msg.content);
+
             let mut status_message = msg
                 .channel_id
                 .say(&ctx.http, "Working on it...")
@@ -29,6 +32,7 @@ impl EventHandler for Handler {
                 .unwrap();
 
             if let Ok(c) = coub::fetch_coub(url_match.as_str()).await {
+                trace!("[{}] Fetched coub.", c.id);
                 let loops = (MAX_SIZE / c.size) as usize;
 
                 let path = tempfile::Builder::new()
@@ -39,6 +43,7 @@ impl EventHandler for Handler {
                     .unwrap()
                     .into_temp_path();
 
+                trace!("[{}] Downloading {} loops...", c.id, loops);
                 let result = if loops < 2 {
                     c.download(&path).await
                 } else {
@@ -47,14 +52,16 @@ impl EventHandler for Handler {
 
                 match result {
                     Ok(()) => {
+                        trace!("[{}] Downloaded. Sending to Discord...", c.id);
                         let _ = msg
                             .channel_id
                             .send_message(&ctx.http, |m| m.add_file(AttachmentType::Path(&path)))
                             .await;
                         let _ = status_message.delete(&ctx).await;
+                        info!("[{}] Done!", c.id);
                     }
                     Err(why) => {
-                        println!("Error converting coub {}\n{:?}", c.id, why);
+                        error!("[{}] Error:\n{:?}", c.id, why);
                         let _ = status_message
                             .edit(&ctx, |m| {
                                 m.content(format!("Error converting coub {}\n{:?}", c.id, why))
@@ -69,12 +76,13 @@ impl EventHandler for Handler {
     }
 
     async fn ready(&self, _: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
+        info!("{} is connected!", ready.user.name);
     }
 }
 
 #[tokio::main]
 async fn main() {
+    pretty_env_logger::init();
     let token = env::var("TOKEN").expect("TOKEN not found in environment.");
     let mut client = Client::new(&token)
         .event_handler(Handler)
@@ -82,6 +90,6 @@ async fn main() {
         .expect("Error creating client");
 
     if let Err(why) = client.start().await {
-        println!("Client error: {:?}", why);
+        error!("Client error: {:?}", why);
     }
 }

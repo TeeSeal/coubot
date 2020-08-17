@@ -4,6 +4,7 @@ use std::{error::Error, path::Path};
 use tempfile::NamedTempFile;
 use tokio::{fs::File, prelude::*, process::Command};
 use url::Url;
+use log::trace;
 
 type BoxResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
 
@@ -21,6 +22,7 @@ impl Coub {
         let video_path = NamedTempFile::new()?.into_temp_path();
         self.write_video_to(&video_path).await?;
 
+        trace!("[{}] Staring ffmpeg process...", self.id);
         Command::new("ffmpeg")
             .arg("-i")
             .arg(&video_path)
@@ -29,6 +31,7 @@ impl Coub {
             .output()
             .await?;
 
+        trace!("[{}] Removing temporary files...", self.id);
         video_path.close()?;
         Ok(())
     }
@@ -42,6 +45,7 @@ impl Coub {
         let line = format!("file '{}'\n", video_path.display());
         concat_file.write_all(line.repeat(loops).as_bytes()).await?;
 
+        trace!("[{}] Staring ffmpeg process...", self.id);
         Command::new("ffmpeg")
             .args(&["-f", "concat", "-safe", "0", "-i"])
             .arg(&concat_file_path)
@@ -50,12 +54,14 @@ impl Coub {
             .output()
             .await?;
 
+        trace!("[{}] Removing temporary files...", self.id);
         video_path.close()?;
         concat_file_path.close()?;
         Ok(())
     }
 
     async fn write_video_to(&self, path: &Path) -> BoxResult<()> {
+        trace!("[{}] Downloading video...", self.id);
         let mut res = reqwest::get(&self.video).await?;
         let mut file = File::create(&path).await?;
         let mut first_chunk = true;
@@ -75,6 +81,7 @@ impl Coub {
             file.write_all(&bytes).await?;
         }
 
+        trace!("[{}] Video downloaded.", self.id);
         Ok(())
     }
 }
