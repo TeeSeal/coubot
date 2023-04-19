@@ -9,10 +9,11 @@ use serenity::{
     prelude::*,
 };
 use std::env;
+use std::cmp::min;
 use log::{info, trace, error};
 
-// 8MB file size limit by discord :(
-const MAX_SIZE: u64 = 7_500_000;
+// 25MB file size limit by discord
+const MAX_SIZE: u64 = 24_000_000;
 lazy_static! {
     static ref COUB_REGEX: Regex = Regex::new(r"(https?://)?(www\.)?coub\.com/[\w/]+").unwrap();
 }
@@ -33,7 +34,7 @@ impl EventHandler for Handler {
 
             if let Ok(c) = coub::fetch_coub(url_match.as_str()).await {
                 trace!("[{}] Fetched coub.", c.id);
-                let loops = (MAX_SIZE / c.size) as usize;
+                let loops = min(3, (MAX_SIZE / c.size) as usize);
 
                 let path = tempfile::Builder::new()
                     .prefix(&c.id)
@@ -84,7 +85,7 @@ impl EventHandler for Handler {
 async fn main() {
     pretty_env_logger::init();
     let token = env::var("TOKEN").expect("TOKEN not found in environment.");
-    let mut client = Client::new(&token)
+    let mut client = Client::builder(&token)
         .event_handler(Handler)
         .await
         .expect("Error creating client");
